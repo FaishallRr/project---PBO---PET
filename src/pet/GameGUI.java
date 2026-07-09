@@ -46,6 +46,7 @@ public class GameGUI extends Application {
     private boolean sleeping = false;
 
     private Timeline gameLoop, saveTimer, speechFadeTimer;
+    private Timeline gameMoveTimer, gameCountdown;
     private int tickCount = 0;
     private int speechCooldownTicks = 0;
 
@@ -456,7 +457,7 @@ public class GameGUI extends Application {
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(24));
         card.setLayoutX((overlayW - 340) / 2);
-        card.setLayoutY((overlayH - 360) / 2);
+        card.setLayoutY(Math.max(30, (overlayH - 360) / 2));
         Label title = new Label("\uD83C\uDF56 Pilih Makanan");
         title.getStyleClass().add("overlay-title");
         VBox list = new VBox(10);
@@ -1220,6 +1221,7 @@ public class GameGUI extends Application {
      */
 
     private void showCreateScreen() {
+        closeCurrentOverlay();
         removeCreateForm();
 
         VBox form = new VBox(15);
@@ -1315,13 +1317,20 @@ public class GameGUI extends Application {
 
     private void closeCurrentOverlay() {
         if (currentOverlay != null) {
-            centerPane.getChildren().remove(currentOverlay); // ✅ REMOVE FROM centerPane
+            // Hentikan timer minigame jika masih jalan
+            if ("minigame".equals(currentOverlay.getUserData())) {
+                if (gameCountdown != null) gameCountdown.stop();
+                if (gameMoveTimer != null) gameMoveTimer.stop();
+            }
+            centerPane.getChildren().remove(currentOverlay);
             currentOverlay = null;
         }
         if (currentOverlayBg != null) {
-            centerPane.getChildren().remove(currentOverlayBg); // ✅ REMOVE FROM centerPane
+            centerPane.getChildren().remove(currentOverlayBg);
             currentOverlayBg = null;
         }
+        // Pastikan form create juga ikut dibersihkan jika ada
+        removeCreateForm();
     }
 
     private void beginOverlay(double bgOpacity) {
@@ -1336,14 +1345,11 @@ public class GameGUI extends Application {
     }
 
     private void showOverlay(String type, Runnable showFn) {
+        // Tutup overlay yang sedang terbuka (jika ada)
         if (currentOverlay != null) {
-            Object data = currentOverlay.getUserData();
-            if (data != null && data.equals(type)) {
-                closeCurrentOverlay();
-                return;
-            }
             closeCurrentOverlay();
         }
+        // Selalu buka overlay baru — tidak ada toggle behavior
         showFn.run();
     }
 
@@ -1400,22 +1406,22 @@ public class GameGUI extends Application {
         double gameW = overlayW - 100;
         double gameH = overlayH - 120;
 
-        Timeline moveTimer = new Timeline(new KeyFrame(Duration.millis(1200), e -> {
+        gameMoveTimer = new Timeline(new KeyFrame(Duration.millis(1200), e -> {
             double nx = 40 + rng.nextDouble() * gameW;
             double ny = 60 + rng.nextDouble() * gameH;
             target.setLayoutX(nx);
             target.setLayoutY(ny);
             target.setVisible(true);
         }));
-        moveTimer.setCycleCount(Animation.INDEFINITE);
+        gameMoveTimer.setCycleCount(Animation.INDEFINITE);
 
-        Timeline countdown = new Timeline();
-        countdown.getKeyFrames().add(new KeyFrame(Duration.seconds(1), e -> {
+        gameCountdown = new Timeline();
+        gameCountdown.getKeyFrames().add(new KeyFrame(Duration.seconds(1), e -> {
             timeLeft[0]--;
             timeLbl.setText("Time: " + timeLeft[0] + "s");
             if (timeLeft[0] <= 0) {
-                countdown.stop();
-                moveTimer.stop();
+                gameCountdown.stop();
+                gameMoveTimer.stop();
                 target.setVisible(false);
 
                 int reward = score[0] * 3 + 5;
@@ -1441,7 +1447,7 @@ public class GameGUI extends Application {
                         Color.web("#FFD700"));
             }
         }));
-        countdown.setCycleCount(20);
+        gameCountdown.setCycleCount(20);
 
         target.setOnAction(e -> {
             score[0]++;
@@ -1450,9 +1456,9 @@ public class GameGUI extends Application {
             target.setVisible(false);
 
             double newRate = Math.max(300, 1200 - score[0] * 50);
-            moveTimer.stop();
-            moveTimer.getKeyFrames().clear();
-            moveTimer.getKeyFrames().add(
+            gameMoveTimer.stop();
+            gameMoveTimer.getKeyFrames().clear();
+            gameMoveTimer.getKeyFrames().add(
                     new KeyFrame(Duration.millis(newRate), ev -> {
                         double nx = 40 + rng.nextDouble() * gameW;
                         double ny = 60 + rng.nextDouble() * gameH;
@@ -1460,17 +1466,17 @@ public class GameGUI extends Application {
                         target.setLayoutY(ny);
                         target.setVisible(true);
                     }));
-            moveTimer.play();
+            gameMoveTimer.play();
         });
 
         closeBtn.setOnAction(e -> {
-            countdown.stop();
-            moveTimer.stop();
+            gameCountdown.stop();
+            gameMoveTimer.stop();
             closeCurrentOverlay();
         });
 
-        moveTimer.play();
-        countdown.play();
+        gameMoveTimer.play();
+        gameCountdown.play();
     }
 
     /*
@@ -1498,7 +1504,7 @@ public class GameGUI extends Application {
         card.setPrefWidth(520);
         card.setAlignment(Pos.CENTER);
         card.setLayoutX((overlayW - 520) / 2);
-        card.setLayoutY((overlayH - 500) / 2);
+        card.setLayoutY(Math.max(30, (overlayH - 500) / 2));
 
         HBox header = new HBox();
         header.setAlignment(Pos.CENTER_LEFT);
@@ -1588,12 +1594,10 @@ public class GameGUI extends Application {
         btnRow.getChildren().add(closeBtn);
 
         card.getChildren().addAll(header, grid, btnRow);
-        centerPane.getChildren().add(card);
-        card.applyCss();
-        card.autosize();
-        card.layout();
-        currentOverlay = card;
-        card.setUserData("shop");
+        pane.getChildren().add(card);
+        centerPane.getChildren().add(pane);
+        currentOverlay = pane;
+        pane.setUserData("shop");
     }
 
     /*
@@ -1618,7 +1622,7 @@ public class GameGUI extends Application {
         card.setMaxHeight(450);
         card.setAlignment(Pos.TOP_CENTER);
         card.setLayoutX((overlayW - 520) / 2);
-        card.setLayoutY((overlayH - 450) / 2);
+        card.setLayoutY(Math.max(30, (overlayH - 450) / 2));
 
         HBox header = new HBox();
         header.setAlignment(Pos.CENTER_LEFT);
@@ -1800,7 +1804,7 @@ public class GameGUI extends Application {
         card.setAlignment(Pos.TOP_CENTER);
         card.setPadding(new Insets(20));
         card.setLayoutX((overlayW - 460) / 2);
-        card.setLayoutY((overlayH - 420) / 2);
+        card.setLayoutY(Math.max(30, (overlayH - 420) / 2));
 
         HBox header = new HBox();
         header.setAlignment(Pos.CENTER_LEFT);
