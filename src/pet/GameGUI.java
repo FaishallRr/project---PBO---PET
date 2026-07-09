@@ -14,7 +14,6 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.animation.*;
 import javafx.util.Duration;
-import java.util.Random;
 import java.util.*;
 
 public class GameGUI extends Application {
@@ -51,7 +50,6 @@ public class GameGUI extends Application {
     private int speechCooldownTicks = 0;
 
     private Pane centerPane;
-    private BorderPane root;
     private Stage stage;
     private VBox toastContainer;
     private VBox createForm;
@@ -80,7 +78,6 @@ public class GameGUI extends Application {
         root.setCenter(buildCenter());
         root.setBottom(buildBottom());
 
-        this.root = root;
         this.stage = stage;
         Scene scene = new Scene(root, W, H);
         scene.getStylesheets().add("file:styles.css");
@@ -481,45 +478,57 @@ public class GameGUI extends Application {
                     return;
                 }
                 closeCurrentOverlay();
-                switch (idx) {
-                    case 0:
-                        dryFoodStock--;
-                        pet.feed(new DryFood("Makanan Kering"));
-                        break;
-                    case 1:
-                        wetFoodStock--;
-                        pet.feed(new WetFood("Makanan Basah"));
-                        break;
-                    case 2:
-                        treatStock--;
-                        pet.feed(new Treat("Snack"));
-                        break;
-                    case 3:
-                        vitaminStock--;
-                        if (pet instanceof Careable) {
-                            ((Careable) pet).giveVitamin();
-                            petSick = false;
-                        }
-                        break;
-                }
-                totalFeeds++;
-                pet.addCoins(1);
-                showSpeech("Nyam nyam enak! \uD83D\uDE0B");
-                sound.play("eat");
-                if (pet2D != null) {
-                    pet2D.setExpression("happy");
-                    pet2D.animateAction("feed");
-                }
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(1200);
-                    } catch (InterruptedException ignored) {
+
+                if (idx == 3) {
+                    // Vitamin — feedback khusus
+                    vitaminStock--;
+                    if (pet instanceof Careable) {
+                        ((Careable) pet).giveVitamin();
+                        petSick = false;
                     }
-                    Platform.runLater(() -> {
-                        if (pet2D != null)
-                            pet2D.setExpression("normal");
-                    });
-                }).start();
+                    pet.addCoins(1);
+                    showSpeech("Sehat dan kuat! \u2728");
+                    sound.play("chime");
+                    if (pet2D != null) {
+                        pet2D.setExpression("happy");
+                        pet2D.animateAction("vitamin");
+                    }
+                    new Thread(() -> {
+                        try { Thread.sleep(1200); } catch (InterruptedException ignored) {}
+                        Platform.runLater(() -> {
+                            if (pet2D != null) pet2D.setExpression("normal");
+                        });
+                    }).start();
+                } else {
+                    switch (idx) {
+                        case 0:
+                            dryFoodStock--;
+                            pet.feed(new DryFood("Makanan Kering"));
+                            break;
+                        case 1:
+                            wetFoodStock--;
+                            pet.feed(new WetFood("Makanan Basah"));
+                            break;
+                        case 2:
+                            treatStock--;
+                            pet.feed(new Treat("Snack"));
+                            break;
+                    }
+                    totalFeeds++;
+                    pet.addCoins(1);
+                    showSpeech("Nyam nyam enak! \uD83D\uDE0B");
+                    sound.play("eat");
+                    if (pet2D != null) {
+                        pet2D.setExpression("happy");
+                        pet2D.animateAction("feed");
+                    }
+                    new Thread(() -> {
+                        try { Thread.sleep(1200); } catch (InterruptedException ignored) {}
+                        Platform.runLater(() -> {
+                            if (pet2D != null) pet2D.setExpression("normal");
+                        });
+                    }).start();
+                }
                 updateStatus();
                 saveToDB();
             });
@@ -687,7 +696,7 @@ public class GameGUI extends Application {
         int diffEnergy = pet.getEnergy() - oldEnergy;
         int diffHealth = pet.getHealth() - oldHealth;
 
-        java.util.List<FloatingInfo> indicators = new java.util.ArrayList<>();
+        List<FloatingInfo> indicators = new ArrayList<>();
         if (diffHunger != 0) {
             indicators.add(new FloatingInfo((diffHunger < 0 ? "" : "+") + diffHunger + " Lapar", Color.web("#FFB347")));
         }
@@ -767,12 +776,15 @@ public class GameGUI extends Application {
         speechLabel.setPrefWidth(350);
         speechLabel.setWrapText(true);
 
-        // Position di tengah atas
-        double screenW = stage.getWidth();
-        if (screenW < 400) screenW = 1000;
+        // Position di tengah atas (relatif ke centerPane)
+        double pw = centerPane.getWidth();
+        if (pw < 400) pw = centerPane.getParent() != null ? ((Region)centerPane.getParent()).getWidth() : 1000;
 
-        double x = (screenW - 350) / 2.0;
-        if (x < 10) x = 10;
+        double x = (pw - 350) / 2.0;
+        if (x < 10)
+            x = 10;
+        if (x + 350 > pw)
+            x = pw - 360;
 
         speechLabel.setLayoutX(x);
         speechLabel.setLayoutY(20);
@@ -900,6 +912,7 @@ public class GameGUI extends Application {
         petList = db.isConnected() ? db.getPetsByOwner(owner) : fileSave.load();
         currentPetIndex = petList.size() - 1;
         updatePetNavButtons();
+        fileSave.save(petList);
     }
 
     private void build2DPet(String species) {
@@ -939,7 +952,8 @@ public class GameGUI extends Application {
             if (sleeping)
                 return;
             if (Math.random() < 0.12) {
-                spawnFloatingIndicator("\uD83D\uDC95 Sayang!", ev.getSceneX(), ev.getSceneY() - 35,
+                javafx.geometry.Point2D localPt = centerPane.sceneToLocal(ev.getSceneX(), ev.getSceneY());
+                spawnFloatingIndicator("\uD83D\uDC95 Sayang!", localPt.getX(), localPt.getY() - 35,
                         Color.web("#FF5E7E"));
                 sound.play("happy");
                 pet.setHappiness(Math.min(100, pet.getHappiness() + 3));
@@ -1069,10 +1083,24 @@ public class GameGUI extends Application {
             if (petId < 0 && newId > 0)
                 petId = newId;
             data.id = petId;
+        }
 
-            // Update petList
-            if (currentPetIndex >= 0 && currentPetIndex < petList.size()) {
-                petList.set(currentPetIndex, data);
+        // Update petList — tambah jika baru, update jika existing
+        if (currentPetIndex >= 0 && currentPetIndex < petList.size()) {
+            petList.set(currentPetIndex, data);
+        } else {
+            // Pet baru: cari apakah sudah ada di list berdasarkan id
+            boolean found = false;
+            for (int i = 0; i < petList.size(); i++) {
+                if (petList.get(i).id == petId) {
+                    petList.set(i, data);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found && petId > 0) {
+                petList.add(data);
+                currentPetIndex = petList.size() - 1;
             }
         }
 
@@ -1091,12 +1119,12 @@ public class GameGUI extends Application {
                 return;
             tickCount++;
 
-            if (tickCount % 8 == 0 && !sleeping) {
+            if (tickCount % 8 == 0 && !sleeping) { // 16 detik
                 pet.timePasses();
             }
 
             // Age progression
-            if (tickCount % 50 == 0) { // 50 kali loop
+            if (tickCount % 50 == 0) { // 100 detik
                 age++;
                 if (pet != null) {
                     pet.setAge(age);
@@ -1153,7 +1181,7 @@ public class GameGUI extends Application {
                 petSick = false;
             }
 
-            if (tickCount % 10 == 0 && pet.getHealth() > 0) {
+            if (tickCount % 10 == 0 && pet.getHealth() > 0) { // 20 detik
                 int oldLevel = level;
                 level = 1 + (totalFeeds + totalPlays) / 10;
                 if (level > oldLevel) {
@@ -1287,11 +1315,11 @@ public class GameGUI extends Application {
 
     private void closeCurrentOverlay() {
         if (currentOverlay != null) {
-            centerPane.getChildren().remove(currentOverlay);  // ✅ REMOVE FROM centerPane
+            centerPane.getChildren().remove(currentOverlay); // ✅ REMOVE FROM centerPane
             currentOverlay = null;
         }
         if (currentOverlayBg != null) {
-            centerPane.getChildren().remove(currentOverlayBg);  // ✅ REMOVE FROM centerPane
+            centerPane.getChildren().remove(currentOverlayBg); // ✅ REMOVE FROM centerPane
             currentOverlayBg = null;
         }
     }
@@ -1303,7 +1331,7 @@ public class GameGUI extends Application {
         Rectangle bg = new Rectangle(overlayW, overlayH, Color.rgb(0, 0, 0, bgOpacity));
         bg.setManaged(false);
         bg.setMouseTransparent(true);
-        centerPane.getChildren().add(bg);  // ✅ ADD TO centerPane, NOT root
+        centerPane.getChildren().add(bg); // ✅ ADD TO centerPane, NOT root
         currentOverlayBg = bg;
     }
 

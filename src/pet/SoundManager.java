@@ -26,7 +26,8 @@ public class SoundManager {
     }
 
     public static SoundManager getInstance() {
-        if (instance == null) instance = new SoundManager();
+        if (instance == null)
+            instance = new SoundManager();
         return instance;
     }
 
@@ -49,7 +50,8 @@ public class SoundManager {
     }
 
     public void play(String key) {
-        if (!enabled) return;
+        if (!enabled)
+            return;
         AudioClip clip = sounds.get(key);
         if (clip != null) {
             clip.play();
@@ -62,9 +64,15 @@ public class SoundManager {
 
     public void playSpeciesSound(String species) {
         switch (species.toLowerCase()) {
-            case "kucing": play("meow"); break;
-            case "anjing": play("bark"); break;
-            case "burung": play("chirp"); break;
+            case "kucing":
+                play("meow");
+                break;
+            case "anjing":
+                play("bark");
+                break;
+            case "burung":
+                play("chirp");
+                break;
         }
     }
 
@@ -76,4 +84,3 @@ public class SoundManager {
         return enabled;
     }
 }
-

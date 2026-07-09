@@ -1,5 +1,5 @@
 @echo off
-title Pet Simulator 3D
+title Pet Simulator 2D
 chcp 65001 >nul
 
 set JAVAFX_PATH=D:\openjfx-26.0.1_windows-x64_bin-sdk\javafx-sdk-26.0.1
@@ -9,7 +9,7 @@ set BIN=bin
 set MODULES=javafx.controls,javafx.graphics,javafx.media,javafx.fxml,javafx.base
 
 echo ^===================================^
-echo ^|   Pet Simulator 3D - Compiler   ^|
+echo ^|   Pet Simulator 2D - Compiler   ^|
 echo ^===================================^
 echo.
 

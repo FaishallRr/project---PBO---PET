@@ -15,6 +15,10 @@ CREATE TABLE IF NOT EXISTS pet_save (
     level INT DEFAULT 1,
     total_feeds INT DEFAULT 0,
     total_plays INT DEFAULT 0,
+    dry_food INT DEFAULT 0,
+    wet_food INT DEFAULT 0,
+    treat INT DEFAULT 0,
+    vitamin INT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

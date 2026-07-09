@@ -579,6 +579,7 @@ public class Pet2D extends Pane {
         if (mouth != null) {
             mouth.setScaleX(1.0);
             mouth.setScaleY(1.0);
+            mouth.setTranslateY(0);
         }
 
         switch (expr.toLowerCase()) {
