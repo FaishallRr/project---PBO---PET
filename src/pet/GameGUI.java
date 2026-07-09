@@ -907,8 +907,9 @@ public class GameGUI extends Application {
         showSpeech("Hai! Namaku " + pet.getName() + "! \uD83D\uDE0A");
         sound.playSpeciesSound(species);
 
-        build2DPet(species);
+        currentPetIndex = -1;
         saveToDB();
+        build2DPet(species);
 
         petList = db.isConnected() ? db.getPetsByOwner(owner) : fileSave.load();
         currentPetIndex = petList.size() - 1;
@@ -1099,7 +1100,7 @@ public class GameGUI extends Application {
                     break;
                 }
             }
-            if (!found && petId > 0) {
+            if (!found) {
                 petList.add(data);
                 currentPetIndex = petList.size() - 1;
             }
@@ -1736,7 +1737,7 @@ public class GameGUI extends Application {
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(30));
         card.setLayoutX((overlayW - 360) / 2);
-        card.setLayoutY((overlayH - 280) / 2);
+        card.setLayoutY(Math.max(30, (overlayH - 280) / 2));
 
         Label title = new Label("\uD83C\uDF81 Kirim Hadiah");
         title.getStyleClass().add("overlay-title");
