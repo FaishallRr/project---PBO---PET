@@ -15,7 +15,8 @@ public abstract class Pet {
         this.hunger = clamp(hunger, 0, 100);
         this.happiness = clamp(happiness, 0, 100);
         this.energy = clamp(energy, 0, 100);
-        if (this.hunger >= 90) this.health = Math.max(0, this.health - 10);
+        if (this.hunger >= 90)
+            this.health = Math.max(0, this.health - 10);
     }
 
     protected int clamp(int val, int min, int max) {
@@ -46,38 +47,42 @@ public abstract class Pet {
 
     public void feed(Food food) {
         if (this.hunger < 20) {
-            System.out.println("? " + name + " merasa MUAL! Perutnya sudah sangat kenyang (" + this.hunger + "%). Dia menolak makan " + food.getName() + ".");
-            return; 
+            System.out.println("? " + name + " merasa MUAL! Perutnya sudah sangat kenyang (" + this.hunger
+                    + "%). Dia menolak makan " + food.getName() + ".");
+            return;
         }
-        
+
         int nutrisiMasuk = food.getHungerReduction();
         int bonusHappy = food.getHappinessBoost();
         int pemulihanHealth = 0;
 
         if (this.hunger == 100) {
-            nutrisiMasuk = nutrisiMasuk * 2; 
-            pemulihanHealth = 10; 
-            System.out.println("?? " + name + " KELAPARAN EKSTREM (100%)! Dia melahap " + food.getName() + " dengan sangat rakus!");
-            System.out.println("?? Efek Makan Rakus: Kelaparan berkurang drastis (Nutrisi efektif: +" + nutrisiMasuk + "%)");
+            nutrisiMasuk = nutrisiMasuk * 2;
+            pemulihanHealth = 10;
+            System.out.println("?? " + name + " KELAPARAN EKSTREM (100%)! Dia melahap " + food.getName()
+                    + " dengan sangat rakus!");
+            System.out.println(
+                    "?? Efek Makan Rakus: Kelaparan berkurang drastis (Nutrisi efektif: +" + nutrisiMasuk + "%)");
         } else if (this.hunger < 40) {
             pemulihanHealth = 1;
             System.out.println(name + " mulai kenyang. Memakan " + food.getName() + " pelan-pelan");
         } else {
-            pemulihanHealth = nutrisiMasuk / 2; 
-            if (pemulihanHealth < 1) pemulihanHealth = 1;
+            pemulihanHealth = nutrisiMasuk / 2;
+            if (pemulihanHealth < 1)
+                pemulihanHealth = 1;
             System.out.println(name + " makan " + food.getName() + " dengan lahap (Nutrisi: +" + nutrisiMasuk + "%)");
         }
 
         setHunger(this.hunger - nutrisiMasuk);
         setHappiness(this.happiness + bonusHappy);
-        
+
         if (this.health <= 0) {
             this.health = Math.min(100, pemulihanHealth + 5);
             System.out.println("?? " + name + " mulai pulih berkat makanan! (HP +" + (pemulihanHealth + 5) + ")");
         } else {
             this.health = Math.min(100, this.health + pemulihanHealth);
         }
-        
+
         System.out.println("?? Health " + name + " bertambah +" + pemulihanHealth + " HP.");
         if (bonusHappy > 0) {
             System.out.println("? " + name + " menyukai rasa makanannya! (Happiness +" + bonusHappy + ")");
@@ -85,7 +90,9 @@ public abstract class Pet {
     }
 
     public abstract void play();
+
     public abstract void makeSound();
+
     public abstract String getSpecies();
 
     public void sleep() {
@@ -102,20 +109,49 @@ public abstract class Pet {
         applyHungerHealthPenalty();
     }
 
-    public String getName() { return name; }
-    public int getHunger() { return hunger; }
-    public int getHappiness() { return happiness; }
-    public int getEnergy() { return energy; }
-    public int getHealth() { return health; }
-    public int getAge() { return age; }
-    public void setAge(int age) { this.age = Math.max(0, age); }
-    public int getCoins() { return coins; }
-    public void setCoins(int coins) { this.coins = Math.max(0, coins); }
-    public void addCoins(int amount) { this.coins = Math.max(0, this.coins + amount); }
+    public String getName() {
+        return name;
+    }
+
+    public int getHunger() {
+        return hunger;
+    }
+
+    public int getHappiness() {
+        return happiness;
+    }
+
+    public int getEnergy() {
+        return energy;
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = Math.max(0, age);
+    }
+
+    public int getCoins() {
+        return coins;
+    }
+
+    public void setCoins(int coins) {
+        this.coins = Math.max(0, coins);
+    }
+
+    public void addCoins(int amount) {
+        this.coins = Math.max(0, this.coins + amount);
+    }
 
     public void showStatus() {
         System.out.println("\n--- STATUS " + name.toUpperCase() + " (" + getSpecies() + ") ---");
-        System.out.println("Hunger    : " + hunger + "% " + getBar(hunger)); 
+        System.out.println("Hunger    : " + hunger + "% " + getBar(hunger));
         System.out.println("Happiness : " + happiness + " " + getBar(happiness));
         System.out.println("Energy    : " + energy + " " + getBar(energy));
         System.out.println("Health    : " + health + " HP");
@@ -125,8 +161,10 @@ public abstract class Pet {
         int dots = value / 10;
         StringBuilder bar = new StringBuilder("[");
         for (int i = 0; i < 10; i++) {
-            if (i < dots) bar.append("#");
-            else bar.append("-");
+            if (i < dots)
+                bar.append("#");
+            else
+                bar.append("-");
         }
         return bar.append("]").toString();
     }
